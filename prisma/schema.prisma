@@ -23,6 +23,8 @@ model WorkEntry {
   date      DateTime @db.Date
   start     DateTime @db.Time
   end       DateTime @db.Time
-  mandate   Mandate  @relation(fields: [mandateId], references: [id])
-  mandateId String
+  mandate   Mandate? @relation(fields: [mandateId], references: [id])
+  mandateId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
