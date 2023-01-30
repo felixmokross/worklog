@@ -5,6 +5,7 @@ import {
   addMinutes,
   format,
   isToday,
+  isWeekend,
   startOfDay,
   startOfWeek,
 } from "date-fns";
@@ -52,34 +53,40 @@ export function WeekView() {
                   {timeSlot.quarter === 0 ? timeSlot.format() : null}
                 </div>
               </div>
-              {Array.from({ length: 7 }).map((_, dayOfWeekIndex) => (
-                <div
-                  key={dayOfWeekIndex}
-                  className={cn(
-                    "h-5 border-r border-slate-200 cursor-pointer",
-                    dayOfWeekIndex === 0 && "border-l",
-                    timeSlot.quarter % 2 === 1 && "border-b",
-                    (timeSlot.hour < 8 || timeSlot.hour >= 17) && "bg-slate-50",
-                    period?.contains(timeSlot) &&
-                      dragDay === dayOfWeekIndex &&
-                      "bg-sky-100"
-                  )}
-                  onMouseOver={() => {
-                    if (!dragBegin) return;
+              {Array.from({ length: 7 }).map((_, dayOfWeekIndex) => {
+                const date = addDays(beginningOfWeek, dayOfWeekIndex);
+                return (
+                  <div
+                    key={dayOfWeekIndex}
+                    className={cn(
+                      "h-5 border-r border-slate-200 cursor-pointer",
+                      dayOfWeekIndex === 0 && "border-l",
+                      timeSlot.quarter % 2 === 1 && "border-b",
+                      (timeSlot.hour < 8 ||
+                        timeSlot.hour >= 17 ||
+                        isWeekend(date)) &&
+                        "bg-slate-50",
+                      period?.contains(timeSlot) &&
+                        dragDay === dayOfWeekIndex &&
+                        "bg-sky-100"
+                    )}
+                    onMouseOver={() => {
+                      if (!dragBegin) return;
 
-                    setDragEnd(timeSlot);
-                  }}
-                  onClick={() => {
-                    if (!dragBegin) {
-                      setDragBegin(timeSlot);
-                      setDragDay(dayOfWeekIndex);
-                    } else {
-                      setDragBegin(undefined);
-                      setDragEnd(undefined);
-                    }
-                  }}
-                ></div>
-              ))}
+                      setDragEnd(timeSlot);
+                    }}
+                    onClick={() => {
+                      if (!dragBegin) {
+                        setDragBegin(timeSlot);
+                        setDragDay(dayOfWeekIndex);
+                      } else {
+                        setDragBegin(undefined);
+                        setDragEnd(undefined);
+                      }
+                    }}
+                  ></div>
+                );
+              })}
             </Fragment>
           ))}
         </div>
