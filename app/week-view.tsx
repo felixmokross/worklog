@@ -2,7 +2,7 @@
 
 import {
   addDays,
-  addHours,
+  addMinutes,
   format,
   isToday,
   startOfDay,
@@ -15,8 +15,15 @@ const beginningOfWeek = startOfWeek(new Date(), {
   weekStartsOn: 1,
 });
 
+const timeFormattingDateRefDate = startOfDay(new Date("2023-01-01"));
+
 export function WeekView() {
-  const [dragBegin, setDragBegin] = useState<number | undefined>(undefined);
+  // TODO would a reducer be better here?
+  const [dragBegin, setDragBegin] = useState<TimeSlot | undefined>(undefined);
+  const [dragEnd, setDragEnd] = useState<TimeSlot | undefined>(undefined);
+  const [dragDay, setDragDay] = useState<number | undefined>(undefined);
+
+  const period = dragBegin && dragEnd && TimePeriod.from(dragBegin, dragEnd);
   return (
     <div className="divide-slate-200 divide-y text-sm h-screen flex flex-col">
       <div className="grid grid-cols-7 divide-x divide-slate-100">
@@ -38,36 +45,37 @@ export function WeekView() {
               ></div>
             </Fragment>
           ))}
-          {Array.from({ length: 48 }).map((_, timeSlotIndex) => (
-            <Fragment key={timeSlotIndex}>
-              <div className="col-end-1 h-10 w-14">
+          {timeSlots.map((timeSlot) => (
+            <Fragment key={timeSlot.toString()}>
+              <div className="col-end-1 h-5 w-14">
                 <div className="text-slate-400 text-xs text-right px-1.5 -translate-y-1/2">
-                  {timeSlotIndex % 2 == 0
-                    ? format(
-                        // TODO does this work on leap days?
-                        addHours(startOfDay(new Date()), timeSlotIndex / 2),
-                        "HH:mm"
-                      )
-                    : ""}
+                  {timeSlot.quarter === 0 ? timeSlot.format() : null}
                 </div>
               </div>
               {Array.from({ length: 7 }).map((_, dayOfWeekIndex) => (
                 <div
                   key={dayOfWeekIndex}
                   className={cn(
-                    "h-10 border-b border-r border-slate-200 cursor-pointer",
+                    "h-5 border-r border-slate-200 cursor-pointer",
                     dayOfWeekIndex === 0 && "border-l",
-                    (timeSlotIndex < 8 * 2 || timeSlotIndex >= 17 * 2) &&
-                      "bg-slate-50"
+                    timeSlot.quarter % 2 === 1 && "border-b",
+                    (timeSlot.hour < 8 || timeSlot.hour >= 17) && "bg-slate-50",
+                    period?.contains(timeSlot) &&
+                      dragDay === dayOfWeekIndex &&
+                      "bg-sky-100"
                   )}
+                  onMouseOver={() => {
+                    if (!dragBegin) return;
+
+                    setDragEnd(timeSlot);
+                  }}
                   onClick={() => {
-                    if (dragBegin === undefined) {
-                      setDragBegin(timeSlotIndex);
+                    if (!dragBegin) {
+                      setDragBegin(timeSlot);
+                      setDragDay(dayOfWeekIndex);
                     } else {
-                      const startOfEntry = Math.min(dragBegin, timeSlotIndex);
-                      const endOfEntry = Math.max(dragBegin, timeSlotIndex);
-                      console.log(`new entry: ${startOfEntry} - ${endOfEntry}`);
                       setDragBegin(undefined);
+                      setDragEnd(undefined);
                     }
                   }}
                 ></div>
@@ -98,4 +106,76 @@ function DayHeader({ date }: DayHeaderProps) {
       </div>
     </div>
   );
+}
+
+class TimeSlot {
+  public constructor(
+    public readonly hour: number,
+    public readonly quarter: number
+  ) {}
+
+  public get minutes() {
+    return this.hour * 60 + this.quarter * 15;
+  }
+
+  public format() {
+    return format(addMinutes(timeFormattingDateRefDate, this.minutes), "HH:mm");
+  }
+
+  public toString() {
+    return this.format();
+  }
+
+  public isBefore(other: TimeSlot) {
+    return this.minutes < other.minutes;
+  }
+
+  public isBeforeOrEqual(other: TimeSlot) {
+    return this.minutes <= other.minutes;
+  }
+
+  public isAfterOrEqual(other: TimeSlot) {
+    return this.minutes >= other.minutes;
+  }
+
+  public isAfter(other: TimeSlot) {
+    return this.minutes > other.minutes;
+  }
+
+  public equals(other: TimeSlot) {
+    return this.minutes === other.minutes;
+  }
+
+  public next() {
+    return this.quarter === 3
+      ? new TimeSlot(this.hour + 1, 0)
+      : new TimeSlot(this.hour, this.quarter + 1);
+  }
+}
+
+const timeSlots = Array.from({ length: 24 }).flatMap<TimeSlot>((_, hour) =>
+  Array.from({ length: 4 }).map((_, quarter) => new TimeSlot(hour, quarter))
+);
+
+class TimePeriod {
+  private constructor(
+    public readonly start: TimeSlot,
+    public readonly end: TimeSlot
+  ) {}
+
+  public static from(boundary1: TimeSlot, boundary2: TimeSlot) {
+    return boundary1.isBeforeOrEqual(boundary2)
+      ? new TimePeriod(boundary1, boundary2)
+      : new TimePeriod(boundary2, boundary1);
+  }
+
+  public contains(timeSlot: TimeSlot) {
+    return (
+      timeSlot.isAfterOrEqual(this.start) && timeSlot.isBeforeOrEqual(this.end)
+    );
+  }
+
+  public toString() {
+    return `${this.start} - ${this.end.next()}`;
+  }
 }
