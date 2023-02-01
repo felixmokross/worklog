@@ -10,6 +10,7 @@ import {
   addMinutes,
   startOfDay,
 } from "date-fns";
+import { zonedTimeToUtc } from "date-fns-tz";
 
 export class CalendarWeek {
   private constructor(public readonly startDate: Date) {
@@ -23,7 +24,9 @@ export class CalendarWeek {
   }
 
   public static fromDate(date: Date) {
-    return new CalendarWeek(startOfWeek(date, { weekStartsOn: 1 }));
+    return new CalendarWeek(
+      zonedTimeToUtc(startOfWeek(date, { weekStartsOn: 1 }), "UTC")
+    );
   }
 
   public static fromString(input: string) {

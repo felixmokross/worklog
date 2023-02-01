@@ -3,20 +3,16 @@
 import { isWeekend, parseISO } from "date-fns";
 import { useRouter } from "next/navigation";
 import { cn } from "./common/classnames";
+import { timeSlotHeight } from "./common/constants";
 import { TimeSlot, WorkEntryDto } from "./common/model";
 import { useWeekViewInteraction } from "./week-view-interaction";
 
 type TimeSlotElementProps = {
   date: string;
   timeSlot: number;
-  isOccupied: boolean;
 };
 
-export function TimeSlotElement({
-  date,
-  timeSlot,
-  isOccupied,
-}: TimeSlotElementProps) {
+export function TimeSlotElement({ date, timeSlot }: TimeSlotElementProps) {
   const {
     dragBegin,
     setDragBegin,
@@ -34,8 +30,9 @@ export function TimeSlotElement({
   const parsedTimeSlot = TimeSlot.fromValue(timeSlot);
   return (
     <div
+      style={{ height: timeSlotHeight }}
       className={cn(
-        "h-5 border-r border-slate-200 cursor-pointer",
+        "border-r border-slate-200 cursor-pointer",
         parsedDate.getDay() === 0 && "border-l",
         parsedTimeSlot.quarter % 2 === 1 && "border-b",
         (parsedTimeSlot.hour < 8 ||
@@ -44,8 +41,7 @@ export function TimeSlotElement({
           "bg-slate-50",
         period?.contains(parsedTimeSlot) &&
           dragDay === parsedDate.getDay() &&
-          "bg-sky-100",
-        isOccupied && "bg-sky-200"
+          "bg-sky-100"
       )}
       onMouseOver={() => {
         if (!dragBegin || isBusy) return;

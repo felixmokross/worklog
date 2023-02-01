@@ -1,14 +1,7 @@
 import { WorkEntry } from "@prisma/client";
-import {
-  addDays,
-  format,
-  formatISO,
-  isSameDay,
-  isToday,
-  isWeekend,
-} from "date-fns";
-import { Fragment } from "react";
+import { addDays, format, formatISO, isSameDay, isToday } from "date-fns";
 import { cn } from "./common/classnames";
+import { timeSlotHeight, timeSlotsPerHour } from "./common/constants";
 import { CalendarWeek, TimeOfDay, TimeSlot } from "./common/model";
 import { TimeSlotElement } from "./time-slot-element";
 import { WeekViewInteractionProvider } from "./week-view-interaction";
@@ -17,6 +10,17 @@ type WeekViewProps = { calendarWeek: CalendarWeek; workEntries: WorkEntry[] };
 
 export function WeekView({ calendarWeek, workEntries }: WeekViewProps) {
   const startOfWeekDate = calendarWeek.startDate;
+  const workEntriesByDay = workEntries.reduce<Record<number, WorkEntry[]>>(
+    (acc, curr) => {
+      if (!acc[curr.date.valueOf()]) {
+        acc[curr.date.valueOf()] = [];
+      }
+
+      acc[curr.date.valueOf()].push(curr);
+      return acc;
+    },
+    {}
+  );
   return (
     <WeekViewInteractionProvider>
       <div className="divide-slate-200 divide-y text-sm contents">
@@ -28,52 +32,64 @@ export function WeekView({ calendarWeek, workEntries }: WeekViewProps) {
         </div>
         <div className="shadow-inner overflow-scroll">
           <div className="grid grid-cols-7">
-            <div className="col-end-1 h-4 w-14"></div>
-            {Array.from({ length: 7 }).map((_, dayofWeekIndex) => (
-              <Fragment key={dayofWeekIndex}>
-                <div
-                  className={cn(
-                    "h-4 border-b border-r border-slate-200 bg-slate-50",
-                    dayofWeekIndex === 0 && "border-l"
-                  )}
-                ></div>
-              </Fragment>
-            ))}
-            {timeSlots.map((timeSlot) => (
-              <Fragment key={timeSlot.toString()}>
-                <div className="col-end-1 h-5 w-14">
+            <div className="col-end-1 w-14">
+              <div className="h-4"></div>
+              {timeSlots.map((timeSlot) => (
+                <div key={timeSlot.toString()} className="h-5">
                   <div className="text-slate-400 text-xs text-right px-1.5 -translate-y-1/2">
                     {timeSlot.quarter === 0 ? timeSlot.format() : null}
                   </div>
                 </div>
-                {Array.from({ length: 7 }).map((_, dayOfWeekIndex) => {
-                  const date = addDays(startOfWeekDate, dayOfWeekIndex);
-                  return (
-                    <TimeSlotElement
-                      key={dayOfWeekIndex}
-                      date={formatISO(date, { representation: "date" })}
-                      timeSlot={timeSlot.value}
-                      isOccupied={workEntries.some(
-                        (we) =>
-                          isSameDay(we.date, date) &&
-                          new TimeOfDay(
-                            we.start.getUTCHours(),
-                            we.start.getUTCMinutes()
-                          ).isBeforeOrEqual(timeSlot.timeOfDay) &&
-                          new TimeOfDay(
-                            we.end.getUTCHours(),
-                            we.end.getUTCMinutes()
-                          ).isAfter(timeSlot.timeOfDay)
-                      )}
-                    />
-                  );
-                })}
-              </Fragment>
-            ))}
+              ))}
+            </div>
+            {Array.from({ length: 7 }).map((_, dayOfWeekIndex) => {
+              const date = addDays(startOfWeekDate, dayOfWeekIndex);
+              const workEntriesOfDay = workEntriesByDay[date.valueOf()] || [];
+              return (
+                <div key={dayOfWeekIndex}>
+                  <div
+                    style={{ height: timeSlotHeight }}
+                    className={cn(
+                      "border-b border-r border-slate-200 bg-slate-50",
+                      dayOfWeekIndex === 0 && "border-l"
+                    )}
+                  ></div>
+                  <div className="relative">
+                    {timeSlots.map((timeSlot) => (
+                      <TimeSlotElement
+                        key={timeSlot.format()}
+                        date={formatISO(date, { representation: "date" })}
+                        timeSlot={timeSlot.value}
+                      />
+                    ))}
+                    {workEntriesOfDay.map((we) => (
+                      <div
+                        key={we.id}
+                        style={{
+                          top: positionForTime(we.start),
+                          height:
+                            positionForTime(we.end) - positionForTime(we.start),
+                        }}
+                        className="absolute w-full pl-px py-px pr-1.5"
+                      >
+                        <div className="bg-red-100 h-full rounded-md"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
     </WeekViewInteractionProvider>
+  );
+}
+
+function positionForTime(time: Date) {
+  return (
+    timeSlotHeight * timeSlotsPerHour * time.getUTCHours() +
+    timeSlotHeight * (time.getUTCMinutes() / (60 / timeSlotsPerHour))
   );
 }
 
