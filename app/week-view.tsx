@@ -36,7 +36,10 @@ export function WeekView({ calendarWeek, workEntries }: WeekViewProps) {
             <div className="col-end-1 w-14">
               <div className="h-4"></div>
               {timeSlots.map((timeSlot) => (
-                <div key={timeSlot.toString()} className="h-5">
+                <div
+                  key={timeSlot.toString()}
+                  style={{ height: timeSlotHeight }}
+                >
                   <div className="text-slate-400 text-xs text-right px-1.5 -translate-y-1/2">
                     {timeSlot.quarter === 0 ? timeSlot.format() : null}
                   </div>

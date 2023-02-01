@@ -1,2 +1,2 @@
-export const timeSlotHeight = 20;
+export const timeSlotHeight = 15;
 export const timeSlotsPerHour = 4;
