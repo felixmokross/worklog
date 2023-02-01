@@ -2,9 +2,10 @@ import { WorkEntry } from "@prisma/client";
 import { addDays, format, formatISO, isSameDay, isToday } from "date-fns";
 import { cn } from "./common/classnames";
 import { timeSlotHeight, timeSlotsPerHour } from "./common/constants";
-import { CalendarWeek, TimeOfDay, TimeSlot } from "./common/model";
+import { CalendarWeek, TimeSlot } from "./common/model";
 import { TimeSlotElement } from "./time-slot-element";
 import { WeekViewInteractionProvider } from "./week-view-interaction";
+import { DeleteButton } from "./delete-button";
 
 type WeekViewProps = { calendarWeek: CalendarWeek; workEntries: WorkEntry[] };
 
@@ -70,9 +71,11 @@ export function WeekView({ calendarWeek, workEntries }: WeekViewProps) {
                           height:
                             positionForTime(we.end) - positionForTime(we.start),
                         }}
-                        className="absolute w-full pl-px py-px pr-1.5"
+                        className="absolute w-full pl-px py-px pr-1.5 group"
                       >
-                        <div className="bg-red-100 h-full rounded-md"></div>
+                        <div className="bg-blue-200 h-full rounded-md p-2 flex flex-col">
+                          <DeleteButton workEntryId={we.id} />
+                        </div>
                       </div>
                     ))}
                   </div>

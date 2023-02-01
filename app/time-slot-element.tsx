@@ -41,7 +41,7 @@ export function TimeSlotElement({ date, timeSlot }: TimeSlotElementProps) {
           "bg-slate-50",
         period?.contains(parsedTimeSlot) &&
           dragDay === parsedDate.getDay() &&
-          "bg-sky-100"
+          "bg-blue-100"
       )}
       onMouseOver={() => {
         if (!dragBegin || isBusy) return;
