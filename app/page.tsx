@@ -5,7 +5,7 @@ import { CalendarWeek } from "./common/model";
 import { parseISO } from "date-fns";
 import { redirect } from "next/navigation";
 
-export default async function Home({
+export default async function HomePage({
   searchParams,
 }: {
   searchParams: { weekOf?: string };
